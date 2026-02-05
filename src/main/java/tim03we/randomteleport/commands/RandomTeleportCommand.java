@@ -40,8 +40,8 @@ public class RandomTeleportCommand extends Command {
         }
         if(sender instanceof Player) {
             Player player = (Player) sender;
-            Level level = player.getLevel();
-            if(args.length > 0) {
+            Level level = Server.getInstance().getDefaultLevel();;
+            if(args.length > 0 && player.hasPermission("randomteleport.others")) {
                 Level targetLevel = Server.getInstance().getLevelByName(args[0]);
                 if(targetLevel != null && Server.getInstance().isLevelLoaded(args[0])) {
                     level = targetLevel;
@@ -51,7 +51,7 @@ public class RandomTeleportCommand extends Command {
                 }
             }
             Level finalLevel = level;
-            RandomTeleport.findRandomSafePosition(player.getLevel(), position -> {
+            RandomTeleport.findRandomSafePosition(finalLevel, position -> {
                 player.teleport(position.setLevel(finalLevel));
                 if(RandomTeleport.instance.getConfig().getBoolean("position.found.message")) {
                     player.sendMessage(Language.translate(true, "position.found"));

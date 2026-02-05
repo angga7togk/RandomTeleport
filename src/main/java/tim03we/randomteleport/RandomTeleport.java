@@ -38,9 +38,7 @@ public class RandomTeleport extends PluginBase {
     }
 
     public static void findRandomSafePosition(Level level, Consumer<Position> callback) {
-
         CompletableFuture.runAsync(() -> callback.accept(randomPos(new Position(0, 0, 0, level))));
-
     }
 
     private static int genRandomPN(int val) {
@@ -67,7 +65,10 @@ public class RandomTeleport extends PluginBase {
             Block body = base.getLevel().getBlock(base.setComponents(x, i + 1, z));
             Block head = base.getLevel().getBlock(base.setComponents(x, i + 2, z));
             if (head.getId() == 0 && body.getId() == 0) {
-                if(ground.getId() != Block.LAVA || ground.getId() != Block.STILL_LAVA && ground.isSolid()) {
+                if (ground.isSolid()
+                        && ground.getId() != Block.LAVA
+                        && ground.getId() != Block.STILL_LAVA) {
+
                     return base.setComponents(x + 0.5, i + 1, z + 0.5);
                 }
             }
