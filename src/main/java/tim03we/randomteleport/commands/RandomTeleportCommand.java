@@ -1,5 +1,9 @@
 package tim03we.randomteleport.commands;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /*
  * This software is distributed under "GNU General Public License v3.0".
  * This license allows you to use it and/or modify it but you are not at
@@ -26,24 +30,42 @@ import tim03we.randomteleport.RandomTeleport;
 
 public class RandomTeleportCommand extends Command {
 
+    private static final Map<UUID, Long> cooldown = new HashMap<>();
+    private static final long COOLDOWN_TIME = 60 * 1000; // 60 second
+
     public RandomTeleportCommand() {
         super("randomteleport", "Teleport to a random place in a world", "/randomteleport [level]");
-        setAliases(new String[]{"randomtp", "rtp"});
+        setAliases(new String[] { "randomtp", "rtp" });
         setPermission("randomteleport.use");
     }
 
     @Override
     public boolean execute(CommandSender sender, String s, String[] args) {
-        if(!sender.hasPermission(getPermission())) {
+        if (!sender.hasPermission(getPermission())) {
             sender.sendMessage(Language.translate(true, "no.permission"));
             return true;
         }
-        if(sender instanceof Player) {
+        if (sender instanceof Player) {
             Player player = (Player) sender;
-            Level level = Server.getInstance().getDefaultLevel();;
-            if(args.length > 0 && player.hasPermission("randomteleport.others")) {
+            UUID uuid = player.getUniqueId();
+
+            long now = System.currentTimeMillis();
+
+            if (cooldown.containsKey(uuid)) {
+                long last = cooldown.get(uuid);
+                long remaining = (COOLDOWN_TIME - (now - last)) / 1000;
+
+                if (remaining > 0) {
+                    player.sendMessage("§cTunggu " + remaining + " detik sebelum RTP lagi.");
+                    return true;
+                }
+            }
+
+            Level level = Server.getInstance().getDefaultLevel();
+
+            if (args.length > 0 && player.hasPermission("randomteleport.others")) {
                 Level targetLevel = Server.getInstance().getLevelByName(args[0]);
-                if(targetLevel != null && Server.getInstance().isLevelLoaded(args[0])) {
+                if (targetLevel != null && Server.getInstance().isLevelLoaded(args[0])) {
                     level = targetLevel;
                 } else {
                     player.sendMessage(Language.translate(true, "world.not.found"));
@@ -53,10 +75,13 @@ public class RandomTeleportCommand extends Command {
             Level finalLevel = level;
             RandomTeleport.findRandomSafePosition(finalLevel, position -> {
                 player.teleport(position.setLevel(finalLevel));
-                if(RandomTeleport.instance.getConfig().getBoolean("position.found.message")) {
+                cooldown.put(player.getUniqueId(), System.currentTimeMillis());
+
+                if (RandomTeleport.instance.getConfig().getBoolean("position.found.message")) {
                     player.sendMessage(Language.translate(true, "position.found"));
                 }
             });
+
         }
         return false;
     }
